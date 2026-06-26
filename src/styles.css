@@ -253,7 +253,45 @@ button {
   display: flex;
   align-items: center;
   gap: 1rem;
-  margin-bottom: 1.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.round-button.mic.listening {
+  animation: mic-pulse 1s ease-in-out infinite;
+}
+@keyframes mic-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 5px 0 rgba(0, 0, 0, 0.18);
+  }
+  50% {
+    transform: scale(1.08);
+    box-shadow: 0 5px 0 rgba(0, 0, 0, 0.18), 0 0 0 8px rgba(255, 255, 255, 0.35);
+  }
+}
+
+/* こえでこたえる の判定ひょうじ */
+.read-judge {
+  min-height: 2.4rem;
+  margin-bottom: 1rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: 999px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  background: rgba(255, 255, 255, 0.9);
+  color: #444;
+  text-align: center;
+  max-width: 380px;
+}
+.read-judge.correct {
+  background: #fff;
+  color: #2a9d8f;
+}
+.read-judge.wrong {
+  background: #fff;
+  color: #ef476f;
 }
 .round-button {
   background: #fff;

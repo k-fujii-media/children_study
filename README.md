@@ -9,7 +9,10 @@
 ## できること
 
 - **よむ**：文字・単語・漢字を大きく表示し、🔊ボタンで読み上げ（端末の音声合成 / 日本語）
+  - 🎤 **こえでこたえる**：実際の声をマイクで入力し、読みと合っているか ⭕❌ で判定（Web Speech API の音声認識。Chrome / Edge など対応ブラウザ）
 - **かく**：うすいお手本の上を指やマウスでなぞって書く練習（なぞり書きキャンバス）
+- **ランダム出題**：「よむ」「かく」とも、問題はランダムな順番で表示
+- ひらがな・カタカナは **濁音・半濁音**（が・ざ・ぱ など）も収録
 - **進捗**：クリアした項目数を ⭐ で表示（端末内 localStorage に保存）
 - 大きなボタン・鮮やかな配色で、子供がひとりでも操作しやすい画面
 
@@ -33,9 +36,13 @@ src/
     curriculum.ts   … カテゴリとレベルの組み立て（ここに追加していく）
     hiragana.ts / katakana.ts / words.ts / kanji.ts … 各レベルの中身
   hooks/
-    useSpeech.ts        … 日本語の読み上げ（Web Speech API）
-    useProgress.ts      … 進捗の保存（localStorage）
-    ProgressContext.tsx … 進捗をアプリ全体で共有
+    useSpeech.ts            … 日本語の読み上げ（Web Speech API）
+    useSpeechRecognition.ts … 声でのこたえ入力（音声認識）
+    useProgress.ts          … 進捗の保存（localStorage）
+    ProgressContext.tsx     … 進捗をアプリ全体で共有
+  utils/
+    shuffle.ts … 出題順のランダム並べ替え
+    kana.ts    … 読みのゆるい照合（カタカナ→ひらがな統一など）
   screens/
     HomeScreen.tsx   … カテゴリ・レベル一覧
     LevelScreen.tsx  … アクティビティ選択（よむ／かく）
