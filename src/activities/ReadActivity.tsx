@@ -5,7 +5,8 @@ import { useSpeech } from '../hooks/useSpeech'
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition'
 import { useProgressContext } from '../hooks/ProgressContext'
 import { shuffle } from '../utils/shuffle'
-import { isReadingMatch } from '../utils/kana'
+import { isReadingMatch, pickHeard, toKanaScript } from '../utils/kana'
+import type { KanaScript } from '../utils/kana'
 import BackButton from '../components/BackButton'
 import Celebration from '../components/Celebration'
 
@@ -37,14 +38,16 @@ export default function ReadActivity({ category, level }: { category: Category; 
   const item = items[index]
   const isLast = index === items.length - 1
   const showReading = useMemo(() => item.glyph !== item.reading, [item])
+  // カタカナ問題はカタカナ、ひらがな・ことば・かんじ問題はひらがなで「きこえたことば」を表示する。
+  const heardScript: KanaScript = level.id === 'katakana' ? 'katakana' : 'hiragana'
 
-  // カードが変わったら自動で読み上げ、判定の表示はリセットする。
+  // カードが変わったら判定の表示をリセットする。
+  // （問題が表示されたタイミングでは自動で読み上げない。きくときは🔊を押す）
   useEffect(() => {
     setRevealed(false)
     setJudge('idle')
     setHeard('')
-    speak(item.reading)
-  }, [item, speak])
+  }, [item])
 
   const handleNext = () => {
     markDone(level.id, item.id)
@@ -63,7 +66,7 @@ export default function ReadActivity({ category, level }: { category: Category; 
     listen(
       (candidates) => {
         const correct = isReadingMatch(candidates, item.reading)
-        setHeard(candidates[0] ?? '')
+        setHeard(toKanaScript(pickHeard(candidates, item.reading), heardScript))
         setJudge(correct ? 'correct' : 'wrong')
         speak(correct ? 'せいかい' : 'もういちど')
       },
