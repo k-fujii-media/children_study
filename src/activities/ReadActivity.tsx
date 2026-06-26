@@ -5,12 +5,15 @@ import { useSpeech } from '../hooks/useSpeech'
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition'
 import { useProgressContext } from '../hooks/ProgressContext'
 import { shuffle } from '../utils/shuffle'
-import { isReadingMatch } from '../utils/kana'
+import { isReadingMatch, pickHeard, toKanaScript } from '../utils/kana'
+import type { KanaScript } from '../utils/kana'
 import BackButton from '../components/BackButton'
 import Celebration from '../components/Celebration'
 
-// こたえ判定のじょうたい。idle=まだ / listening=きいているところ / correct=せいかい / wrong=ふせいかい
-type JudgeState = 'idle' | 'listening' | 'correct' | 'wrong'
+// こたえ判定のじょうたい。
+// idle=まだ / listening=きいているところ / correct=せいかい / wrong=ふせいかい
+// unclear=うまく聞き取れなかった / denied=マイクが使えない
+type JudgeState = 'idle' | 'listening' | 'correct' | 'wrong' | 'unclear' | 'denied'
 
 // 「よむ」アクティビティ。
 // 文字や単語を大きく見せ、🔊で読みをきき、🎤で声でこたえてマルバツ判定する。
@@ -35,14 +38,16 @@ export default function ReadActivity({ category, level }: { category: Category; 
   const item = items[index]
   const isLast = index === items.length - 1
   const showReading = useMemo(() => item.glyph !== item.reading, [item])
+  // カタカナ問題はカタカナ、ひらがな・ことば・かんじ問題はひらがなで「きこえたことば」を表示する。
+  const heardScript: KanaScript = level.id === 'katakana' ? 'katakana' : 'hiragana'
 
-  // カードが変わったら自動で読み上げ、判定の表示はリセットする。
+  // カードが変わったら判定の表示をリセットする。
+  // （問題が表示されたタイミングでは自動で読み上げない。きくときは🔊を押す）
   useEffect(() => {
     setRevealed(false)
     setJudge('idle')
     setHeard('')
-    speak(item.reading)
-  }, [item, speak])
+  }, [item])
 
   const handleNext = () => {
     markDone(level.id, item.id)
@@ -54,17 +59,25 @@ export default function ReadActivity({ category, level }: { category: Category; 
   }
 
   // 🎤 で声をきき、こたえの読みと照合してマルバツを出す。
+  // 認識できなかったときも、必ず「もういちど」などの結果を表示してボタンを押せる状態に戻す。
   const handleListen = () => {
     setHeard('')
     setJudge('listening')
     listen(
       (candidates) => {
         const correct = isReadingMatch(candidates, item.reading)
-        setHeard(candidates[0] ?? '')
+        setHeard(toKanaScript(pickHeard(candidates, item.reading), heardScript))
         setJudge(correct ? 'correct' : 'wrong')
         speak(correct ? 'せいかい' : 'もういちど')
       },
-      () => setJudge('idle'),
+      (reason) => {
+        if (reason === 'not-allowed') {
+          setJudge('denied')
+        } else {
+          setJudge('unclear')
+          speak('もういちど')
+        }
+      },
     )
   }
 
@@ -136,6 +149,12 @@ export default function ReadActivity({ category, level }: { category: Category; 
             <span>
               ❌ もういちど！{heard && `きこえたのは「${heard}」`}
             </span>
+          )}
+          {judge === 'unclear' && (
+            <span>🎤 うまく きこえなかったよ。もういちど はなしてね</span>
+          )}
+          {judge === 'denied' && (
+            <span>🎤 マイクが つかえないみたい。せっていを みてね</span>
           )}
         </div>
       )}

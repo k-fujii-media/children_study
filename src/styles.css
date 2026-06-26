@@ -293,6 +293,12 @@ button {
   background: #fff;
   color: #ef476f;
 }
+.read-judge.unclear,
+.read-judge.denied {
+  background: #fff;
+  color: #b5651d;
+  font-size: 1.05rem;
+}
 .round-button {
   background: #fff;
   width: 72px;
