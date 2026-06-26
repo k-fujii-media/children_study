@@ -17,7 +17,7 @@ export const curriculum: Category[] = [
       {
         id: 'hiragana',
         title: 'ひらがな',
-        subtitle: '46もじ',
+        subtitle: 'だくおんも',
         emoji: 'あ',
         color: '#ff70a6',
         activities: ['read', 'write'],
@@ -26,7 +26,7 @@ export const curriculum: Category[] = [
       {
         id: 'katakana',
         title: 'カタカナ',
-        subtitle: '46もじ',
+        subtitle: 'だくおんも',
         emoji: 'ア',
         color: '#ffa552',
         activities: ['read', 'write'],

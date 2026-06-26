@@ -2,27 +2,45 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import type { Category, Level } from '../data/types'
 import { useSpeech } from '../hooks/useSpeech'
+import { useSpeechRecognition } from '../hooks/useSpeechRecognition'
 import { useProgressContext } from '../hooks/ProgressContext'
+import { shuffle } from '../utils/shuffle'
+import { isReadingMatch } from '../utils/kana'
 import BackButton from '../components/BackButton'
 import Celebration from '../components/Celebration'
 
+// こたえ判定のじょうたい。idle=まだ / listening=きいているところ / correct=せいかい / wrong=ふせいかい
+type JudgeState = 'idle' | 'listening' | 'correct' | 'wrong'
+
 // 「よむ」アクティビティ。
-// 文字や単語を大きく見せ、🔊で読みをきき、めくって すすむ。最後まで進むとおいわい。
+// 文字や単語を大きく見せ、🔊で読みをきき、🎤で声でこたえてマルバツ判定する。
+// 問題はランダムな順番で表示され、最後まで進むとおいわい。
 export default function ReadActivity({ category, level }: { category: Category; level: Level }) {
   const navigate = useNavigate()
   const { speak, supported } = useSpeech()
+  const {
+    supported: micSupported,
+    listening,
+    listen,
+  } = useSpeechRecognition()
   const { markDone } = useProgressContext()
+  // 出題順をランダムにシャッフルして持つ（「もういちど」で並べ直す）。
+  const [items, setItems] = useState(() => shuffle(level.items))
   const [index, setIndex] = useState(0)
   const [revealed, setRevealed] = useState(false)
   const [finished, setFinished] = useState(false)
+  const [judge, setJudge] = useState<JudgeState>('idle')
+  const [heard, setHeard] = useState('')
 
-  const item = level.items[index]
-  const isLast = index === level.items.length - 1
+  const item = items[index]
+  const isLast = index === items.length - 1
   const showReading = useMemo(() => item.glyph !== item.reading, [item])
 
-  // カードが変わったら自動で読み上げる。
+  // カードが変わったら自動で読み上げ、判定の表示はリセットする。
   useEffect(() => {
     setRevealed(false)
+    setJudge('idle')
+    setHeard('')
     speak(item.reading)
   }, [item, speak])
 
@@ -35,12 +53,28 @@ export default function ReadActivity({ category, level }: { category: Category; 
     }
   }
 
+  // 🎤 で声をきき、こたえの読みと照合してマルバツを出す。
+  const handleListen = () => {
+    setHeard('')
+    setJudge('listening')
+    listen(
+      (candidates) => {
+        const correct = isReadingMatch(candidates, item.reading)
+        setHeard(candidates[0] ?? '')
+        setJudge(correct ? 'correct' : 'wrong')
+        speak(correct ? 'せいかい' : 'もういちど')
+      },
+      () => setJudge('idle'),
+    )
+  }
+
   if (finished) {
     return (
       <Celebration
         color={level.color}
         message={`${level.title}を ぜんぶ よめたね！`}
         onAgain={() => {
+          setItems(shuffle(level.items))
           setIndex(0)
           setFinished(false)
         }}
@@ -54,7 +88,7 @@ export default function ReadActivity({ category, level }: { category: Category; 
       <div className="activity-top">
         <BackButton to={`/${category.id}/${level.id}`} />
         <span className="activity-counter">
-          {index + 1} / {level.items.length}
+          {index + 1} / {items.length}
         </span>
       </div>
 
@@ -75,12 +109,36 @@ export default function ReadActivity({ category, level }: { category: Category; 
         >
           🔊
         </button>
+        {micSupported && (
+          <button
+            className={`round-button mic${listening ? ' listening' : ''}`}
+            aria-label="こえでこたえる"
+            disabled={listening}
+            onClick={handleListen}
+          >
+            🎤
+          </button>
+        )}
         {showReading && !revealed && (
           <button className="pill-button" onClick={() => setRevealed(true)}>
             よみをみる
           </button>
         )}
       </div>
+
+      {micSupported && judge !== 'idle' && (
+        <div className={`read-judge ${judge}`}>
+          {judge === 'listening' && <span>👂 こえを きいているよ…</span>}
+          {judge === 'correct' && (
+            <span>⭕ せいかい！{heard && `「${heard}」`}</span>
+          )}
+          {judge === 'wrong' && (
+            <span>
+              ❌ もういちど！{heard && `きこえたのは「${heard}」`}
+            </span>
+          )}
+        </div>
+      )}
 
       <button className="big-next-button" onClick={handleNext}>
         {isLast ? 'おわり 🎉' : 'つぎへ →'}
