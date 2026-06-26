@@ -123,6 +123,61 @@ button {
   padding-top: 1.5rem;
 }
 
+/* ---------- キャラクター（トップ） ---------- */
+.character-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: linear-gradient(135deg, #fff6d5, #ffe3ef);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.1);
+}
+.character-emoji {
+  font-size: 4rem;
+  line-height: 1;
+  flex-shrink: 0;
+  animation: pop 0.5s ease;
+}
+.character-info {
+  flex: 1;
+  min-width: 0;
+}
+.character-name {
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #ef476f;
+}
+.character-desc {
+  font-size: 0.85rem;
+  color: #777;
+  margin-top: 0.1rem;
+}
+.character-points {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-top: 0.4rem;
+}
+.evo-bar {
+  height: 12px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 0.4rem;
+}
+.evo-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffb703, #ef476f);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+.character-next {
+  font-size: 0.8rem;
+  color: #888;
+  margin-top: 0.3rem;
+}
+
 /* ---------- 戻る ---------- */
 .back-button {
   background: rgba(255, 255, 255, 0.85);
@@ -400,7 +455,25 @@ button {
 }
 .celebration-message {
   font-size: 1.3rem;
-  margin: 0.5rem 0 2rem;
+  margin: 0.5rem 0 1rem;
+}
+.celebration-note {
+  margin: 0 0 1.5rem;
+}
+.celebration-points {
+  font-size: 1.6rem;
+  font-weight: 800;
+}
+.celebration-evolve {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-top: 0.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  color: #ef476f;
+  border-radius: 999px;
+  padding: 0.5rem 1.1rem;
+  display: inline-block;
+  animation: pop 0.6s ease;
 }
 .celebration-buttons {
   display: flex;

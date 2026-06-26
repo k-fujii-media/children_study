@@ -4,11 +4,18 @@ import type { Category, Level } from '../data/types'
 import { useSpeech } from '../hooks/useSpeech'
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition'
 import { useProgressContext } from '../hooks/ProgressContext'
+import { usePointsContext } from '../hooks/PointsContext'
 import { shuffle } from '../utils/shuffle'
 import { isReadingMatch, pickHeard, toKanaScript } from '../utils/kana'
 import type { KanaScript } from '../utils/kana'
+import { scoreForSession } from '../utils/score'
+import { monsterForPoints } from '../data/monsters'
+import type { Monster } from '../data/monsters'
 import BackButton from '../components/BackButton'
 import Celebration from '../components/Celebration'
+
+// このレベルはといたらポイントがもらえるか（ひらがな・カタカナだけ）。
+const SCORING_LEVELS = ['hiragana', 'katakana']
 
 // こたえ判定のじょうたい。
 // idle=まだ / listening=きいているところ / correct=せいかい / wrong=ふせいかい
@@ -27,6 +34,7 @@ export default function ReadActivity({ category, level }: { category: Category; 
     listen,
   } = useSpeechRecognition()
   const { markDone } = useProgressContext()
+  const { points, addPoints } = usePointsContext()
   // 出題順をランダムにシャッフルして持つ（「もういちど」で並べ直す）。
   const [items, setItems] = useState(() => shuffle(level.items))
   const [index, setIndex] = useState(0)
@@ -34,6 +42,14 @@ export default function ReadActivity({ category, level }: { category: Category; 
   const [finished, setFinished] = useState(false)
   const [judge, setJudge] = useState<JudgeState>('idle')
   const [heard, setHeard] = useState('')
+  // まちがえた問題のID（最終的な判定で管理。正解しなおせば消える）。
+  const [wrongIds, setWrongIds] = useState<Set<string>>(() => new Set())
+  // セッション終了時にあたえた得点と、進化したモンスター（あれば）。
+  const [earnedPoints, setEarnedPoints] = useState<number | null>(null)
+  const [evolvedTo, setEvolvedTo] = useState<Monster | null>(null)
+
+  // このレベルはポイント対象か。
+  const earnsPoints = SCORING_LEVELS.includes(level.id)
 
   const item = items[index]
   const isLast = index === items.length - 1
@@ -52,6 +68,15 @@ export default function ReadActivity({ category, level }: { category: Category; 
   const handleNext = () => {
     markDone(level.id, item.id)
     if (isLast) {
+      // ひらがな・カタカナを最後までといたら得点をあたえる。
+      if (earnsPoints) {
+        const score = scoreForSession(wrongIds.size)
+        const before = monsterForPoints(points)
+        const after = monsterForPoints(points + score)
+        addPoints(score)
+        setEarnedPoints(score)
+        if (after.stage > before.stage) setEvolvedTo(after)
+      }
       setFinished(true)
     } else {
       setIndex((i) => i + 1)
@@ -68,6 +93,13 @@ export default function ReadActivity({ category, level }: { category: Category; 
         const correct = isReadingMatch(candidates, item.reading)
         setHeard(toKanaScript(pickHeard(candidates, item.reading), heardScript))
         setJudge(correct ? 'correct' : 'wrong')
+        // 得点計算のため、まちがえた問題を記録する（正解しなおせば消す）。
+        setWrongIds((prev) => {
+          const next = new Set(prev)
+          if (correct) next.delete(item.id)
+          else next.add(item.id)
+          return next
+        })
         speak(correct ? 'せいかい' : 'もういちど')
       },
       (reason) => {
@@ -86,10 +118,25 @@ export default function ReadActivity({ category, level }: { category: Category; 
       <Celebration
         color={level.color}
         message={`${level.title}を ぜんぶ よめたね！`}
+        note={
+          earnedPoints !== null && (
+            <>
+              <div className="celebration-points">⭐ {earnedPoints} てん ゲット！</div>
+              {evolvedTo && (
+                <div className="celebration-evolve">
+                  {evolvedTo.emoji} 「{evolvedTo.name}」に しんかした！
+                </div>
+              )}
+            </>
+          )
+        }
         onAgain={() => {
           setItems(shuffle(level.items))
           setIndex(0)
           setFinished(false)
+          setWrongIds(new Set())
+          setEarnedPoints(null)
+          setEvolvedTo(null)
         }}
         onHome={() => navigate('/')}
       />

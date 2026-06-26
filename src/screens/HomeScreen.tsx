@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom'
 import { curriculum } from '../data/curriculum'
 import { useProgressContext } from '../hooks/ProgressContext'
+import CharacterCard from '../components/CharacterCard'
 
 // ホーム画面。カテゴリごとにレベルのカードをならべる。
 export default function HomeScreen() {
@@ -13,6 +14,8 @@ export default function HomeScreen() {
         <h1 className="home-title">こどもがくしゅう</h1>
         <p className="home-subtitle">よみかきをたのしくれんしゅう！</p>
       </header>
+
+      <CharacterCard />
 
       {curriculum.map((category) => (
         <section key={category.id} className="category">

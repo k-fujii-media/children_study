@@ -4,6 +4,7 @@ import { HashRouter } from 'react-router-dom'
 import { registerSW } from 'virtual:pwa-register'
 import App from './App'
 import { ProgressProvider } from './hooks/ProgressContext'
+import { PointsProvider } from './hooks/PointsContext'
 import './styles.css'
 
 // PWA の自動更新。
@@ -33,7 +34,9 @@ createRoot(document.getElementById('root')!).render(
     {/* GitHub Pages などサブパス配信でも動くよう HashRouter を使う。 */}
     <HashRouter>
       <ProgressProvider>
-        <App />
+        <PointsProvider>
+          <App />
+        </PointsProvider>
       </ProgressProvider>
     </HashRouter>
   </StrictMode>,
