@@ -9,8 +9,10 @@ import { isReadingMatch } from '../utils/kana'
 import BackButton from '../components/BackButton'
 import Celebration from '../components/Celebration'
 
-// こたえ判定のじょうたい。idle=まだ / listening=きいているところ / correct=せいかい / wrong=ふせいかい
-type JudgeState = 'idle' | 'listening' | 'correct' | 'wrong'
+// こたえ判定のじょうたい。
+// idle=まだ / listening=きいているところ / correct=せいかい / wrong=ふせいかい
+// unclear=うまく聞き取れなかった / denied=マイクが使えない
+type JudgeState = 'idle' | 'listening' | 'correct' | 'wrong' | 'unclear' | 'denied'
 
 // 「よむ」アクティビティ。
 // 文字や単語を大きく見せ、🔊で読みをきき、🎤で声でこたえてマルバツ判定する。
@@ -54,6 +56,7 @@ export default function ReadActivity({ category, level }: { category: Category; 
   }
 
   // 🎤 で声をきき、こたえの読みと照合してマルバツを出す。
+  // 認識できなかったときも、必ず「もういちど」などの結果を表示してボタンを押せる状態に戻す。
   const handleListen = () => {
     setHeard('')
     setJudge('listening')
@@ -64,7 +67,14 @@ export default function ReadActivity({ category, level }: { category: Category; 
         setJudge(correct ? 'correct' : 'wrong')
         speak(correct ? 'せいかい' : 'もういちど')
       },
-      () => setJudge('idle'),
+      (reason) => {
+        if (reason === 'not-allowed') {
+          setJudge('denied')
+        } else {
+          setJudge('unclear')
+          speak('もういちど')
+        }
+      },
     )
   }
 
@@ -136,6 +146,12 @@ export default function ReadActivity({ category, level }: { category: Category; 
             <span>
               ❌ もういちど！{heard && `きこえたのは「${heard}」`}
             </span>
+          )}
+          {judge === 'unclear' && (
+            <span>🎤 うまく きこえなかったよ。もういちど はなしてね</span>
+          )}
+          {judge === 'denied' && (
+            <span>🎤 マイクが つかえないみたい。せっていを みてね</span>
           )}
         </div>
       )}
